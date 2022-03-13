@@ -1,0 +1,418 @@
+#%RAML 1.0
+#  Created with anypoint.mulesoft.com/designcenter
+
+title: api.bots.business
+baseUri: https://api.bots.business
+version: 1
+protocols: [https]
+
+securitySchemes:
+  passthrough:
+    description: |
+      This API supports API KEY Authentication.
+    type: Pass Through
+    describedBy:
+      queryParameters:
+        api_key:
+          type: string
+          example: 4C9ghNCU_XP0myTFbzK4AOgWB4FgI8BZiG0NC
+          required: true
+          displayName: Secret user's key for API access
+          description: Do not use secret key in client's unsecure app
+      responses:
+        401:
+          description: |
+            Unauthorized
+          body:
+            application/json:
+              example: {"errors":["You need to sign in or sign up before continuing."]}
+
+traits:
+  send_message:
+    queryParameters:
+      message:
+        description: message from bot
+        example: hello, username
+        required: true
+    securedBy: passthrough
+    responses:
+      404:
+        description: Bot with botId not found
+        body:
+          application/json:
+            example: { error: "Bot not found" }
+      200:
+        description:  task for sending was created
+        body:
+          application/json:
+            example: |
+              {"id":10,"message":"hello, username","user_id":null,"bot_id":12,
+              "created_at":"2017-10-12T09:30:01.179Z","updated_at":"2017-10-12T09:30:01.179Z",
+              "command":null}
+
+  send_command:
+    queryParameters:
+      message:
+        description: command fo execution to bot
+        example: /joke
+        required: true
+    securedBy: passthrough
+    responses:
+      404:
+        description: Bot with botId not found
+        body:
+          application/json:
+            example: { error: "Bot not found" }
+      200:
+        description:  task for sending was created
+        body:
+          application/json:
+            example: |
+              {"id":11,"message":null,"user_id":null,"bot_id":12,
+              "created_at":"2017-10-12T09:30:01.179Z","updated_at":"2017-10-12T09:30:01.179Z",
+              "command":"/joke"}
+
+  external_user_autorization:
+    description: Start autorization with @webAuthBot and get token for it.
+    queryParameters:
+      hello_msg:
+        description: Bot will send this message after autorization
+        type: string
+        required: false
+        example: Hello, username
+      somebody_already_autorized_msg:
+        description: Bot will send this message if autorization already peformormed
+        type: string
+        required: false
+        example: Somebody already entered. Not you?
+      time_expired_msg:
+        description: Bot will send this message if a lot of time has passed
+        type: string
+        required: false
+        example: Please try again. Lot of time has passed
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"id":30,"bot_id":68,"user_id":null,"token":"DqwYnBRx6z9VqabYMwh8A7b92fV7m4IYNZyu0mj1",
+              "custom_hello_msg":"Authorized","custom_time_expired_msg":null,
+              "custom_somebody_already_autorized_msg":"Somebody has already entered. Not you?",
+              "autorized_at":null,
+              "created_at":"2017-10-13T04:44:14.759Z","updated_at":"2017-10-13T04:44:14.759Z"}
+  bot:
+    queryParameters:
+      name:
+        description: Bot name
+        type: string
+        required: false
+      token:
+        description: Bot token. Get it from @BotFather
+        type: string
+        required: false
+      csv_url:
+        description: CSV url for commands uploading
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"id":80,"name":"MyBot","token":"250400JChNlzilsBNZu-Mf2tSYhKw3fFE",
+              "created_at":"2017-10-13T08:02:41.742Z",
+              "updated_at":"2017-10-13T08:02:41.742Z","csv_url":"","last_run_at":null,
+              "status_code":null,"status":null}
+
+  user_property:
+    queryParameters:
+      name:
+        description: Property name
+        type: string
+        required: true
+      value:
+        description: Property value
+        required: true
+      type:
+        description: Property type. Can be - integer, float, boolean, string, text, json, datetime.
+        required: false
+        example: json
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"id":589562,"user_id":7855,"bot_id":687,"name":"Game level","created_at":"2018-01-07T13:49:15.812Z","updated_at":"2018-01-07T13:49:15.812Z","value":5,"type":"integer"}
+      400:
+        body:
+          application/json:
+            example: |
+              {"error": "Property name and value required"}
+
+
+/user:
+  /reset_password:
+    post:
+      description: Reset password by email
+      queryParameters:
+        email:
+          description: Users email
+
+/bots:
+  description: All user's bots
+  securedBy: passthrough
+  post:
+    description: Create new bot
+    is: [bot]
+
+  get:
+    description: Get information about all user's bots
+    responses:
+      200:
+        body:
+          application/json:
+            description: array of bots
+            example:
+              [{"id":68,"name":"TestBot","token":"250400152:AAFOzilsBNZu-Mf2tSYhKw3fFE",
+              "created_at":"2017-07-01T04:49:32.496Z","updated_at":"2017-10-12T04:39:36.674Z",
+              "csv_url":"https://docs.google.com/spreadsheets/d/EeCGqT5zTtT7hFs0H5BrRj1y70QhItO-c/pub?
+              gid=0\u0026single=true\u0026output=csv","last_run_at":"2017-10-12T04:39:36.672Z",
+              "status_code":5,"status":"works"},{"id":75,"name":"OherBOT","token":"dfsiifiw3j49938jdsf",
+              "created_at":"2017-10-10T05:19:16.718Z","updated_at":"2017-10-10T05:24:43.726Z","csv_url":null,
+              "last_run_at":null,"status_code":null,"status":null}]
+
+  /{botId}:
+    description: Bot's information
+    securedBy: passthrough
+    get:
+      description: Get bot's information with chats stat
+      responses:
+        200:
+          body:
+            application/json:
+              description: Bot and chats stat information
+              example:
+                {"bot":{"id":68,"name":"DemoBot","token":"250400JChNlzilsBNZu-Mf2tSYhKw3fFE",
+                "created_at":"2017-07-01T04:49:32.496Z","updated_at":"2017-10-12T04:39:36.674Z",
+                "csv_url":"https://docs.google.com/spreadsheets/d/EeCGqT5zTHP20v5BrRj1y7hz4bOItO-c/pub?
+                gid=0\u0026single=true\u0026output=csv","last_run_at":"2017-10-12T04:39:36.672Z",
+                "status_code":5,"status":"works"},"chats_stat":{"total":2,"group_chats_count":0,"user_chats_count":2}
+                ,"total_commands":10}
+
+    put:
+      description: Edit bot
+      is: [bot]
+
+    delete:
+      description: Destroy bot
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {"id":80,"name":"MyBot","token":"250400JChNlzilsBNZu-Mf2tSYhKw3fFE",
+                "created_at":"2017-10-13T08:02:41.742Z",
+                "updated_at":"2017-10-13T08:02:41.742Z","csv_url":"","last_run_at":null,
+                "status_code":null,"status":null}
+
+
+    /status:
+      securedBy: passthrough
+      description: Current bot work status.
+      get:
+        description: Current bot work status. Can be - "works", "stopped", "start lanch", "start stopping"
+        responses:
+          200:
+            body:
+              application/json:
+                example:
+                  { status: "start launch" }
+
+      post:
+        description: Start or stop bot
+        queryParameters:
+          status:
+            description: it can be "start_launch" or "start_stopping"
+        responses:
+          200:
+            body:
+              application/json:
+
+
+
+    /messages:
+      description: Messages from users
+      securedBy: passthrough
+      post:
+        description: Send message to all users from bot
+        is: [send_message]
+
+    /commands:
+      description: Bot can have comammands
+      securedBy: passthrough
+      get:
+        description: Get all bot's commads
+        responses:
+          200:
+            body:
+              application/json:
+                example: |
+                  [{"id":14,"command":"/start","bot_id":68,"help":null,"created_at":"2017-08-14T04:07:40.212Z",
+                  "updated_at":"2017-08-15T11:47:46.805Z","answer":"Start always run in first. You can see /help",
+                  "last_csv_import_at":"2017-08-15T11:47:45.922Z","created_via_csv_import":true,"keyboard_body":null,
+                  "bjs_mode":null}]
+
+    /csv_import_tasks:
+      description: Bot can import commands from CSV file via link. Need task or it.
+      securedBy: passthrough
+      /{id}:
+        description: Show task data
+        securedBy: passthrough
+        get:
+          description: Get current task status. I can be with status "ok", "in progress" and "failed". Also contains result with statistics for status "ok"
+          responses:
+            200:
+              body:
+                application/json:
+                  example: |
+                    [ {"status":"ok","task_id":null,"result":{"id":1,"bot_id":"68","integer":null,"new_count":5,"updated_count":1,                         "destroyed_count":null,"created_at":"2018-02-10T02:05:17.215Z","updated_at":"2018-02-10T02:05:17.215Z"}} ]
+      post:
+        description: Create new task for CSV import
+        responses:
+          200:
+            body:
+              application/json:
+
+    /error_logs:
+      description: Bot can have error with command execution
+      securedBy: passthrough
+      get:
+        description: Get all bot's errors
+        responses:
+          200:
+            body:
+              application/json:
+                example: |
+                  [ {"id":1,"title":"Can open url: http://gogle.!com","stack_trace":null,"bot_id":null,"scenario_id":null,                              "created_at":"2018-02-10T02:26:42.284Z","updated_at":"2018-02-10T02:26:42.284Z"} ]
+
+
+    /active_commands:
+      description: Send command for bot execution for all users
+      securedBy: passthrough
+      post:
+        is: [send_command]
+    /users:
+      description: All users who have chats with bot
+      securedBy: passthrough
+      get:
+        description: Get all users for bot
+        responses:
+          200:
+            body:
+              application/json:
+                example: |
+                    [{"id":12,"first_name":"Alex","last_name":"Smith","username":"Alex",
+                    "telegramid":200248856,"created_at":"2017-10-12T03:59:36.021Z",
+                    "updated_at":"2017-10-12T03:59:36.030Z"}, {"id":13,"first_name":"Jon",
+                    "last_name":"Snow","username":"Snow",
+                    "telegramid":200554547,"created_at":"2017-10-12T03:59:36.021Z",
+                    "updated_at":"2017-10-12T03:59:36.030Z"}]
+
+      /{userId}:
+        description: User who have chat with bot
+        securedBy: passthrough
+        get:
+          description: Get user's information
+          responses:
+            200:
+              body:
+                application/json:
+                  example: |
+                    {"id":12,"first_name":"Alex","last_name":"Smith","username":"Alex",
+                    "telegramid":200248856,"created_at":"2017-10-12T03:59:36.021Z",
+                    "updated_at":"2017-10-12T03:59:36.030Z"}
+        /properties:
+          description: User's properties for this bot
+          securedBy: passthrough
+          post:
+            description: Create new property
+            is: [user_property]
+          get:
+            description: Show all properties
+            responses:
+              200:
+                body:
+                  application/json:
+                    example: [{"id":589562,"user_id":7855,"bot_id":687,"name":"Game level","created_at":"2018-01-07T13:49:15.812Z","updated_at":"2018-01-07T13:49:15.812Z","value":5,"type":"integer"}]
+
+          /{propertyId}:
+            get:
+              description: Show property
+              responses:
+                200:
+                  body:
+                    application/json:
+                      example: |
+                        {"id":589562,"user_id":7855,"bot_id":687,"name":"Game level","created_at":"2018-01-07T13:49:15.812Z","updated_at":"2018-01-07T13:49:15.812Z","value":5,"type":"integer"}
+            put:
+              description: Update property
+              is: [user_property]
+            delete:
+              description: Destroy user propety
+
+
+
+        /messages:
+          description: Messages
+          securedBy: passthrough
+          post:
+            description: Send message to user from bot
+            is: [send_message]
+        /active_commands:
+          description: Send command for bot execution fo user
+          securedBy: passthrough
+          post:
+            is: [send_command]
+
+
+
+/external_autorizations:
+  description: |
+    External User Autorization for webpage (EUA) via @webAuthBot.
+    Use it for get telegram user's data in any webapp.
+  post:
+    is: [external_user_autorization]
+
+  /{bot_id}:
+    description: |
+      External User Autorization for webapp (EUA) with your's own bot.
+      Use it for get telegram user's data in any webapp. Bound your own tegram bot with your code.
+      It can be via your's own bot created with Bots.Business.
+    post:
+      description: Start autorization with your's bot and get token for it.
+      is: [external_user_autorization]
+
+  /go/{:token}:
+    description: Continue autorization by token via bot. Transfer this secret link for user
+    get:
+      description: Continue autorization by token via bot. Transfer this secret link for user
+      responses:
+        303:
+          description: Perform redirect to bot
+
+
+  /{token}:
+    description: Check current status for external user autorization. Or get user's telegram data if it completed
+    get:
+      description: Get current status for external user autorization. Or get user's telegram data if it completed
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                { user: {"id":12,"first_name":"Alex","last_name":"Smith","username":"Alex",
+                "telegramid":200248856,"created_at":"2017-10-12T03:59:36.021Z",
+                "updated_at":"2017-10-12T03:59:36.030Z"} }
+
+
+
